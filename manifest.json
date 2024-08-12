@@ -1,0 +1,18 @@
+{
+    "manifest_version": 3,
+    "name": "GPT Test Extension",
+    "description": "This is a very cool extension",
+    "version": "1.0",
+    "action": {
+      "default_popup": "popup_htmls/popup.html",
+      "default_icon": "icons/extension_icon.png"
+    },
+    "content_scripts": [
+        {
+          "js": ["scripts/read_input.js"],
+          "matches": [
+            "https://*/*"
+          ]
+        }
+    ]
+}
