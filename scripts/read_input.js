@@ -1,5 +1,9 @@
 const BUTTON_SELECTOR = '.selection-button';
 
+const OPENAI_API_KEY = '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';
+const OPENAI_ORGANIZATION_ID = 'org-G3tztz3w8bknXwb2FeSN8sa1';
+const OPENAI_PROJECT_ID = 'proj_I7L3HWWUVlrcgV6R0IUevhlI';
+
 /*
     Utils function
 */
@@ -18,10 +22,95 @@ function isCursorInTypableField() {
     return false;
 }
 
+function getUniqueSelector(element) {
+    if (element.id) {
+        return `#${element.id}`;
+    }
+
+    let path = [];
+    while (element && element.nodeType === Node.ELEMENT_NODE) {
+        let selector = element.nodeName.toLowerCase();
+        
+        // Add classes if they exist
+        if (element.className) {
+            selector += '.' + element.className.trim().replace(/\s+/g, '.');
+        }
+
+        // Add nth-child if necessary to distinguish similar siblings
+        if (element.parentElement) {
+            const siblings = Array.from(element.parentElement.children);
+            const sameTagSiblings = siblings.filter(sibling => sibling.nodeName === element.nodeName);
+            if (sameTagSiblings.length > 1) {
+                const index = siblings.indexOf(element) + 1;
+                selector += `:nth-child(${index})`;
+            }
+        }
+
+        path.unshift(selector);
+        element = element.parentElement;
+    }
+
+    return path.join(' > ');
+}
+
+/*
+    AI function
+*/
+async function aiRewrite(original, prompt) {
+    const request = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'OpenAI-Organization': `${OPENAI_ORGANIZATION_ID}`,
+            'OpenAI-Project': `${OPENAI_PROJECT_ID}`
+        },
+        body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+                {
+                    role: "system", 
+                    content: `
+                        You are a support agent for an Shopify App platform.
+                        You are about to rewrite the chat I provide based on the content I give you
+                        Your job is to assist customers with any issues they encounter while using the platform, ensuring that responses are clear, empathetic, and solution-oriented
+                        Always maintain a friendly and professional tone, and provide concise and actionable guidance, sometime funny
+                        Don't make the message feel like bot, make it human
+                        The prompt will include message to rewrite and the note when rewrite
+                        If the note is empty, please ignore
+                        Provide rewritten text only, don't include anything else
+                    ` 
+                },
+                {
+                    role: "user",
+                    content: `
+                        message to rewrite: ${original}.
+                        note when rewrite: ${prompt}
+                    `
+                }
+            ],
+            temperature: 0.3
+        })
+    }
+
+    // Send
+    // Send the request and return the suggestion
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', request);
+        const data = await response.json();
+
+        const suggestion = data.choices[0].message.content;
+        
+        return suggestion;
+    } catch (error) {
+        return null;
+    }
+}
+
 /*
     Create HTML elements
 */
-function showPopover() {
+function showPopover(originalText, inputSelector) {
     // Find the button element using BUTTON_SELECTOR
     const button = document.querySelector(BUTTON_SELECTOR);
     if (!button) {
@@ -84,15 +173,30 @@ function showPopover() {
         borderRadius: '4px',
         cursor: 'pointer'
     });
-    submitButton.addEventListener('click', () => {
+
+    // SUBMIT ACTION!!!
+    //
+    //
+    //
+    // IMPORTANT
+    submitButton.addEventListener('click', async () => {
         // Handle the submit button click here
         const selectedOption = select.value;
         const enteredText = textField.value;
+
         console.log('Selected option:', selectedOption);
         console.log('Entered text:', enteredText);
 
+        const suggestion = await aiRewrite(originalText, enteredText);
+        console.log('suggestion:', suggestion);
+        console.log('input selector:', inputSelector);
+        if (suggestion) {
+            document.querySelector(inputSelector).innerText = suggestion;
+            document.querySelector(inputSelector).value = suggestion;
+        }
+
         // Close the popover
-        document.body.removeChild(popover);
+        // document.body.removeChild(popover);
     });
     popoverContent.appendChild(submitButton);
 
@@ -118,7 +222,7 @@ function showPopover() {
     document.addEventListener('click', handleClickOutside);
 }
 
-function createButton(selection) {
+function createButton(selection, inputSelector) {
     // Create a button element
     const button = document.createElement('button');
     button.textContent = 'Rewrite with AI';
@@ -168,19 +272,19 @@ function createButton(selection) {
 
     // Event
     button.addEventListener('click', () => {
-        showPopover();
+        showPopover(selection.toString(), inputSelector);
         hideButton();
     });
 
     return button;
 }
 
-function showButton(selection) {
+function showButton(selection, inputSelector) {
     // Remove any existing button
     hideButton();
 
     // Create button
-    const button = createButton(selection);
+    const button = createButton(selection, inputSelector);
 
     // Append the button to the document body
     document.body.appendChild(button);
@@ -203,22 +307,52 @@ function handleSelectionComplete() {
     }
     
     // Show button
+    const activeElement = document.activeElement;
     const selection = window.getSelection();
     if (selection.toString()) {
-        console.log('Selection complete. Selected text:', selection.toString());
-        showButton(selection);
+        showButton(selection, getUniqueSelector(activeElement));
     }
 }
 
 function handleDeselect(event) {
-    if (event.target.matches(BUTTON_SELECTOR)) {
+    try {
+        if (event.target.matches(BUTTON_SELECTOR)) {
+            return;
+        }
+        hideButton();
+    }
+    catch (error) {
         return;
     }
-    hideButton();
 }
 
 /*
-    Listen to eventss
+    Listen to events
 */
-document.addEventListener('mouseup', handleSelectionComplete);
+// Add event listeners for mouse
+document.addEventListener('mouseup', (event) => {
+    setTimeout(handleSelectionComplete, 1);
+});
 document.addEventListener('mousedown', handleDeselect);
+
+// Select by keyboard
+document.addEventListener('keyup', (event) => {
+    handleDeselect();
+});
+document.addEventListener('keydown', (event) => {
+    if (event.ctrlKey && event.key === 'a') {
+        setTimeout(handleSelectionComplete, 1); 
+    }
+});
+
+// Deselect
+document.addEventListener('input', handleDeselect);
+
+// If you're working with specific input elements (e.g., textarea or input fields),
+// add the event listener to those elements instead of the document.
+setTimeout(() => {
+    const inputElements = document.querySelectorAll('textarea, input[type="text"]');
+    inputElements.forEach(element => {
+        element.addEventListener('input', handleDeselect);
+    });
+}, 2500);
