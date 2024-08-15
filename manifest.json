@@ -9,7 +9,13 @@
     },
     "content_scripts": [
         {
-          "js": ["scripts/read_input.js"],
+          "js": [
+            "scripts/fa_initiator.js",
+            "scripts/fa_actions.js"
+          ],
+          "css": [
+            "css/ui.css"
+          ],
           "matches": [
             "https://*/*"
           ]
