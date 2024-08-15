@@ -258,8 +258,8 @@ function handleSelectionComplete() {
     const activeElement = document.activeElement;
 
     const parentWindow = getContentWindowForActiveElement();
-    const selection = getContentWindowForActiveElement().getSelection();
-
+    const selection = parentWindow.document.getSelection();
+    
     if (selection.toString()) {
         showButton(selection, getUniqueSelector(activeElement), parentWindow.frameElement);
     }
@@ -291,8 +291,8 @@ document.addEventListener('keyup', (event) => {
     handleDeselect();
 });
 document.addEventListener('keydown', (event) => {
-    if (event.ctrlKey && event.key === 'a') {
-        setTimeout(handleSelectionComplete, 1); 
+    if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+        setTimeout(handleSelectionComplete, 50);
     }
 });
 
