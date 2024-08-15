@@ -96,6 +96,10 @@ function getSelectionPositionInIframe(iframe, selection) {
 function convertIframePositionToMainWindow(iframe, rect) {
     const iframeRect = iframe.getBoundingClientRect();
 
+    console.log('top 1', iframeRect.top);
+    console.log('top 2', iframeRect.top + 10000);
+    console.log('rect.top', rect.top);
+
     return {
         top: rect.top + iframeRect.top,
         left: rect.left + iframeRect.left,

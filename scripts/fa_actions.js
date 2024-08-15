@@ -154,6 +154,43 @@ function showPopover(originalText, inputSelector, activeElement) {
     document.addEventListener('click', handleClickOutside);
 }
 
+function getSelectionRectRelativeToBody(selection) {
+    if (selection.rangeCount === 0) return null; // No selection
+    
+    let range = selection.getRangeAt(0);
+    let rect = range.getBoundingClientRect();
+    
+    // Initialize offset
+    let offsetTop = 0;
+    let offsetLeft = 0;
+    
+    // Traverse up the DOM to accumulate offsets if inside iframes
+    let currentFrame = window.frameElement;
+    while (currentFrame) {
+        const frameRect = currentFrame.getBoundingClientRect();
+        
+        // Add iframe's position to offsets
+        offsetTop += frameRect.top;
+        offsetLeft += frameRect.left;
+        
+        // Move up to the parent frame
+        currentFrame = currentFrame.ownerDocument.defaultView.frameElement;
+    }
+    
+    // Calculate final position relative to the <body> of the main document
+    return {
+        top: rect.top + offsetTop,
+        left: rect.left + offsetLeft,
+        bottom: rect.bottom + offsetTop,
+        right: rect.right + offsetLeft,
+        width: rect.width,
+        height: rect.height
+    };
+}
+
+
+
+
 function createButton(selection, inputSelector, frameElement) {
     // Create a button element
     const button = document.createElement('button');
@@ -162,10 +199,11 @@ function createButton(selection, inputSelector, frameElement) {
 
     // Check if the selection is within a textarea
     const range = selection.getRangeAt(0);
+    
     const selectedNode = range.startContainer;
     const parentElement = selectedNode.nodeType === 3 ? selectedNode.parentElement : selectedNode;
 
-    let top, left;
+    let top, left, bottom;
 
     // Find the <textarea> element
     let textArea = null;
@@ -174,6 +212,19 @@ function createButton(selection, inputSelector, frameElement) {
     } else {
         // If not directly a <textarea>, find it within the parent element
         textArea = parentElement.querySelector('textarea');
+    }
+
+    // Check GG Docs
+    let additionalTop = 0;
+    let additionalLeft = 0;
+
+    if (isGoogleDocs()) {
+        additionalLeft = 140;
+
+        // 240 + scroll
+        const editorElement = document.querySelector('.kix-appview-editor');
+        const ggDocScroll = editorElement.scrollTop;
+        additionalTop = 240 - ggDocScroll;
     }
 
     if (textArea) {
@@ -193,28 +244,21 @@ function createButton(selection, inputSelector, frameElement) {
         // Fallback to the range if <textarea> is not found
         let normalRect = range.getBoundingClientRect();
 
-        // If iframe
-        const iframe = frameElement;
-        const iframeRect = getSelectionPositionInIframe(iframe, selection);
-        if (iframeRect) {
-            normalRect = convertIframePositionToMainWindow(iframe, iframeRect);
-        }
-
-        const middleOfScreen = window.innerHeight / 2;
+        const middleOfScreen = (window.innerHeight * 2.0 / 3.0) - additionalTop;
         
-        if (normalRect.top < middleOfScreen) {
+        if (normalRect.bottom < middleOfScreen) {
             // If above the middle of the screen, display below
-            top = window.scrollY + normalRect.bottom + 10; // 10px below the range
+            top = window.scrollY + normalRect.bottom + 7; 
         } else {
             // If below the middle of the screen, display above
-            top = window.scrollY + normalRect.top - 30; // 30px above the range
+            top = window.scrollY + normalRect.top - 55;
         }
         left = window.scrollX + normalRect.left;
     }
 
     // Position the button
-    button.style.top = `${top}px`;
-    button.style.left = `${left}px`;
+    button.style.top = `${top + additionalTop}px`;
+    button.style.left = `${left + additionalLeft}px`;
 
     // Event
     button.addEventListener('click', () => {
@@ -282,7 +326,7 @@ function handleDeselect(event) {
 */
 // Add event listeners for mouse
 document.addEventListener('mouseup', (event) => {
-    setTimeout(handleSelectionComplete, 1);
+    setTimeout(handleSelectionComplete, 50);
 });
 document.addEventListener('mousedown', handleDeselect);
 
