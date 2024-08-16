@@ -189,8 +189,6 @@ function getSelectionRectRelativeToBody(selection) {
 }
 
 
-
-
 function createButton(selection, inputSelector, frameElement) {
     // Create a button element
     const button = document.createElement('button');
@@ -214,51 +212,91 @@ function createButton(selection, inputSelector, frameElement) {
         textArea = parentElement.querySelector('textarea');
     }
 
-    // Check GG Docs
-    let additionalTop = 0;
-    let additionalLeft = 0;
+    // Get scroll
+    const editorElement = document.querySelector('.kix-appview-editor');
+    const ggDocScroll = editorElement.scrollTop;
 
+    // gg docs
     if (isGoogleDocs()) {
-        additionalLeft = 140;
+        // If Window
+        if (window.getComputedStyle(frameElement).getPropertyValue('transform') != 'none') {
+            let normalRect = range.getBoundingClientRect();
 
-        // 240 + scroll
-        const editorElement = document.querySelector('.kix-appview-editor');
-        const ggDocScroll = editorElement.scrollTop;
-        additionalTop = 240 - ggDocScroll;
-    }
+            // If iframe
+            const iframe = frameElement;
+            const iframeRect = getSelectionPositionInIframe(iframe, selection);
+            if (iframeRect) {
+                normalRect = convertIframePositionToMainWindow(iframe, iframeRect);
+            }
 
-    if (textArea) {
-        // Get the bounding rectangle of the <textarea>
-        const textAreaRect = textArea.getBoundingClientRect();
-        const middleOfScreen = window.innerHeight / 2;
-        
-        if (textAreaRect.top < middleOfScreen) {
-            // If above the middle of the screen, display below
-            top = window.scrollY + textAreaRect.bottom + 10; // 10px below the textarea
-        } else {
-            // If below the middle of the screen, display above
-            top = window.scrollY + textAreaRect.top - 30; // 30px above the textarea
+            const middleOfScreen = window.innerHeight / 2;
+            
+            if (normalRect.top < middleOfScreen) {
+                // If above the middle of the screen, display below
+                top = window.scrollY + normalRect.bottom + 10; // 10px below the range
+            } else {
+                // If below the middle of the screen, display above
+                top = window.scrollY + normalRect.top - 30; // 30px above the range
+            }
+            left = window.scrollX + normalRect.left;
         }
-        left = window.scrollX + textAreaRect.left;
-    } else {
-        // Fallback to the range if <textarea> is not found
-        let normalRect = range.getBoundingClientRect();
+        // If Mac
+        else {
+            const middleOfScreen = (window.innerHeight / 2);
+            const offset = getSelectionOffsetInGoogleDocs(selection);
 
-        const middleOfScreen = (window.innerHeight * 2.0 / 3.0) - additionalTop;
-        
-        if (normalRect.bottom < middleOfScreen) {
-            // If above the middle of the screen, display below
-            top = window.scrollY + normalRect.bottom + 7; 
-        } else {
-            // If below the middle of the screen, display above
-            top = window.scrollY + normalRect.top - 55;
+            let normalRect = range.getBoundingClientRect();
+
+            if (normalRect.bottom - ggDocScroll < middleOfScreen) {
+                // If above the middle of the screen, display below
+                top = window.scrollY + offset.bottom + 7; 
+            } else {
+                // If below the middle of the screen, display above
+                top = window.scrollY + offset.top - 55;
+            }
+            left = window.scrollX + offset.left;
         }
-        left = window.scrollX + normalRect.left;
-    }
 
-    // Position the button
-    button.style.top = `${top + additionalTop}px`;
-    button.style.left = `${left + additionalLeft}px`;
+        // Position the button
+        button.style.top = `${top}px`;
+        button.style.left = `${left}px`;
+    }
+    // Not gg docs
+    else {
+        // Text area
+        if (textArea) {
+            // Get the bounding rectangle of the <textarea>
+            const textAreaRect = textArea.getBoundingClientRect();
+            const middleOfScreen = window.innerHeight / 2;
+            
+            if (textAreaRect.top < middleOfScreen) {
+                // If above the middle of the screen, display below
+                top = window.scrollY + textAreaRect.bottom + 10; // 10px below the textarea
+            } else {
+                // If below the middle of the screen, display above
+                top = window.scrollY + textAreaRect.top - 30; // 30px above the textarea
+            }
+            left = window.scrollX + textAreaRect.left;
+        }
+        // Not text area (maybe input?)
+        else {
+            // Fallback to the range if <textarea> is not found
+            let normalRect = range.getBoundingClientRect();
+            
+            if (normalRect.bottom < middleOfScreen) {
+                // If above the middle of the screen, display below
+                top = window.scrollY + normalRect.bottom + 7; 
+            } else {
+                // If below the middle of the screen, display above
+                top = window.scrollY + normalRect.top - 55;
+            }
+            left = window.scrollX + normalRect.left;
+        }
+
+        // Position the button
+        button.style.top = `${top}px`;
+        button.style.left = `${left}px`;
+    }
 
     // Event
     button.addEventListener('click', () => {
