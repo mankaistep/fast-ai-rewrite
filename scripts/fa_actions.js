@@ -112,7 +112,7 @@ function showPopover(originalText, inputSelector, activeElement) {
 
     // Create the submit button inside the popover
     const submitButton = document.createElement('button');
-    submitButton.textContent = 'Submit';
+    submitButton.textContent = 'Generate ✦';
     submitButton.className = 'popover-submit-button';
 
     // SUBMIT ACTION!!!
@@ -154,6 +154,41 @@ function showPopover(originalText, inputSelector, activeElement) {
     document.addEventListener('click', handleClickOutside);
 }
 
+function getSelectionRectRelativeToBody(selection) {
+    if (selection.rangeCount === 0) return null; // No selection
+    
+    let range = selection.getRangeAt(0);
+    let rect = range.getBoundingClientRect();
+    
+    // Initialize offset
+    let offsetTop = 0;
+    let offsetLeft = 0;
+    
+    // Traverse up the DOM to accumulate offsets if inside iframes
+    let currentFrame = window.frameElement;
+    while (currentFrame) {
+        const frameRect = currentFrame.getBoundingClientRect();
+        
+        // Add iframe's position to offsets
+        offsetTop += frameRect.top;
+        offsetLeft += frameRect.left;
+        
+        // Move up to the parent frame
+        currentFrame = currentFrame.ownerDocument.defaultView.frameElement;
+    }
+    
+    // Calculate final position relative to the <body> of the main document
+    return {
+        top: rect.top + offsetTop,
+        left: rect.left + offsetLeft,
+        bottom: rect.bottom + offsetTop,
+        right: rect.right + offsetLeft,
+        width: rect.width,
+        height: rect.height
+    };
+}
+
+
 function createButton(selection, inputSelector, frameElement) {
     // Create a button element
     const button = document.createElement('button');
@@ -162,10 +197,11 @@ function createButton(selection, inputSelector, frameElement) {
 
     // Check if the selection is within a textarea
     const range = selection.getRangeAt(0);
+    
     const selectedNode = range.startContainer;
     const parentElement = selectedNode.nodeType === 3 ? selectedNode.parentElement : selectedNode;
 
-    let top, left;
+    let top, left, bottom;
 
     // Find the <textarea> element
     let textArea = null;
@@ -176,45 +212,90 @@ function createButton(selection, inputSelector, frameElement) {
         textArea = parentElement.querySelector('textarea');
     }
 
-    if (textArea) {
-        // Get the bounding rectangle of the <textarea>
-        const textAreaRect = textArea.getBoundingClientRect();
-        const middleOfScreen = window.innerHeight / 2;
-        
-        if (textAreaRect.top < middleOfScreen) {
-            // If above the middle of the screen, display below
-            top = window.scrollY + textAreaRect.bottom + 10; // 10px below the textarea
-        } else {
-            // If below the middle of the screen, display above
-            top = window.scrollY + textAreaRect.top - 30; // 30px above the textarea
-        }
-        left = window.scrollX + textAreaRect.left;
-    } else {
-        // Fallback to the range if <textarea> is not found
-        let normalRect = range.getBoundingClientRect();
+    const middleOfScreen = (window.innerHeight / 2);
 
-        // If iframe
-        const iframe = frameElement;
-        const iframeRect = getSelectionPositionInIframe(iframe, selection);
-        if (iframeRect) {
-            normalRect = convertIframePositionToMainWindow(iframe, iframeRect);
+    // gg docs
+    if (isGoogleDocs()) {
+        // Get scroll
+        const editorElement = document.querySelector('.kix-appview-editor');
+        const ggDocScroll = editorElement.scrollTop;
+
+        // If Window
+        if (window.getComputedStyle(frameElement).getPropertyValue('transform') != 'none') {
+            let normalRect = range.getBoundingClientRect();
+
+            // If iframe
+            const iframe = frameElement;
+            const iframeRect = getSelectionPositionInIframe(iframe, selection);
+            if (iframeRect) {
+                normalRect = convertIframePositionToMainWindow(iframe, iframeRect);
+            }
+            
+            if (normalRect.top < middleOfScreen) {
+                // If above the middle of the screen, display below
+                top = window.scrollY + normalRect.bottom + 10; // 10px below the range
+            } else {
+                // If below the middle of the screen, display above
+                top = window.scrollY + normalRect.top - 30; // 30px above the range
+            }
+            left = window.scrollX + normalRect.left;
+        }
+        // If Mac
+        else {
+            const offset = getSelectionOffsetInGoogleDocs(selection);
+
+            let normalRect = range.getBoundingClientRect();
+
+            if (normalRect.bottom - ggDocScroll < middleOfScreen) {
+                // If above the middle of the screen, display below
+                top = window.scrollY + offset.bottom + 7; 
+            } else {
+                // If below the middle of the screen, display above
+                top = window.scrollY + offset.top - 55;
+            }
+            left = window.scrollX + offset.left;
         }
 
-        const middleOfScreen = window.innerHeight / 2;
-        
-        if (normalRect.top < middleOfScreen) {
-            // If above the middle of the screen, display below
-            top = window.scrollY + normalRect.bottom + 10; // 10px below the range
-        } else {
-            // If below the middle of the screen, display above
-            top = window.scrollY + normalRect.top - 30; // 30px above the range
-        }
-        left = window.scrollX + normalRect.left;
+        // Position the button
+        button.style.top = `${top}px`;
+        button.style.left = `${left}px`;
     }
+    // Not gg docs
+    else {
+        // Text area
+        if (textArea) {
+            // Get the bounding rectangle of the <textarea>
+            const textAreaRect = textArea.getBoundingClientRect();
+            const middleOfScreen = window.innerHeight / 2;
+            
+            if (textAreaRect.top < middleOfScreen) {
+                // If above the middle of the screen, display below
+                top = window.scrollY + textAreaRect.bottom + 10; // 10px below the textarea
+            } else {
+                // If below the middle of the screen, display above
+                top = window.scrollY + textAreaRect.top - 30; // 30px above the textarea
+            }
+            left = window.scrollX + textAreaRect.left;
+        }
+        // Not text area (maybe input?)
+        else {
+            // Fallback to the range if <textarea> is not found
+            let normalRect = range.getBoundingClientRect();
+            
+            if (normalRect.bottom < middleOfScreen) {
+                // If above the middle of the screen, display below
+                top = window.scrollY + normalRect.bottom + 7; 
+            } else {
+                // If below the middle of the screen, display above
+                top = window.scrollY + normalRect.top - 55;
+            }
+            left = window.scrollX + normalRect.left;
+        }
 
-    // Position the button
-    button.style.top = `${top}px`;
-    button.style.left = `${left}px`;
+        // Position the button
+        button.style.top = `${top}px`;
+        button.style.left = `${left}px`;
+    }
 
     // Event
     button.addEventListener('click', () => {
@@ -258,8 +339,8 @@ function handleSelectionComplete() {
     const activeElement = document.activeElement;
 
     const parentWindow = getContentWindowForActiveElement();
-    const selection = getContentWindowForActiveElement().getSelection();
-
+    const selection = parentWindow.document.getSelection();
+    
     if (selection.toString()) {
         showButton(selection, getUniqueSelector(activeElement), parentWindow.frameElement);
     }
@@ -282,19 +363,9 @@ function handleDeselect(event) {
 */
 // Add event listeners for mouse
 document.addEventListener('mouseup', (event) => {
-    setTimeout(handleSelectionComplete, 1);
+    setTimeout(handleSelectionComplete, 50);
 });
 document.addEventListener('mousedown', handleDeselect);
-
-// Select by keyboard
-document.addEventListener('keyup', (event) => {
-    handleDeselect();
-});
-document.addEventListener('keydown', (event) => {
-    if (event.ctrlKey && event.key === 'a') {
-        setTimeout(handleSelectionComplete, 1); 
-    }
-});
 
 // Deselect
 document.addEventListener('input', handleDeselect);
@@ -306,3 +377,19 @@ setTimeout(() => {
         element.addEventListener('input', handleDeselect);
     });
 }, 2500);
+
+
+// Key event
+let documentToAddListner = document;
+if (isGoogleDocs()) {
+    documentToAddListner = document.querySelector('.docs-texteventtarget-iframe').contentWindow.document;
+}
+// Select by keyboard
+documentToAddListner.addEventListener('keyup', (event) => {
+    handleDeselect();
+});
+documentToAddListner.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+        setTimeout(handleSelectionComplete, 50);
+    }
+});

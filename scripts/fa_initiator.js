@@ -104,6 +104,26 @@ function convertIframePositionToMainWindow(iframe, rect) {
     };
 }
 
+
+/*
+    Google Docs
+*/
+function getSelectionOffsetInGoogleDocs(selection) {
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    
+    const firstCanvas = document.querySelector('.canvas-first-page');
+
+    const canvasTop = firstCanvas.getBoundingClientRect().top;
+    const canvasLeft = firstCanvas.getBoundingClientRect().left;
+
+    const top = rect.top + canvasTop + 97 + window.scrollY;
+    const left = rect.left + canvasLeft + 97 + window.scrollX;
+    const bottom = rect.bottom + canvasTop + 97 + window.scrollY;
+  
+    return { top, left, bottom };
+}
+  
 /*
     Paste function
 */

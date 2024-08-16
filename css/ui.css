@@ -27,8 +27,22 @@
 .popover-select,
 .popover-textfield {
     display: block;
-    margin: 10px 0;
     width: 100%;
+    margin: 10px 0;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.popover-textfield {
+    resize: vertical;
+    overflow: auto;
+    max-height: calc(2 * 1.5em + 20px);
+    line-height: 1.5em;
+    padding: 5px;
+}
+
+.popover-select {
+    padding: 5px;
 }
 
 .popover-submit-button {
@@ -38,4 +52,5 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 14px;
 }
