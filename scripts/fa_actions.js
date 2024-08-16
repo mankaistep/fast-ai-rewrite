@@ -212,12 +212,14 @@ function createButton(selection, inputSelector, frameElement) {
         textArea = parentElement.querySelector('textarea');
     }
 
-    // Get scroll
-    const editorElement = document.querySelector('.kix-appview-editor');
-    const ggDocScroll = editorElement.scrollTop;
+    const middleOfScreen = (window.innerHeight / 2);
 
     // gg docs
     if (isGoogleDocs()) {
+        // Get scroll
+        const editorElement = document.querySelector('.kix-appview-editor');
+        const ggDocScroll = editorElement.scrollTop;
+
         // If Window
         if (window.getComputedStyle(frameElement).getPropertyValue('transform') != 'none') {
             let normalRect = range.getBoundingClientRect();
@@ -228,8 +230,6 @@ function createButton(selection, inputSelector, frameElement) {
             if (iframeRect) {
                 normalRect = convertIframePositionToMainWindow(iframe, iframeRect);
             }
-
-            const middleOfScreen = window.innerHeight / 2;
             
             if (normalRect.top < middleOfScreen) {
                 // If above the middle of the screen, display below
@@ -242,7 +242,6 @@ function createButton(selection, inputSelector, frameElement) {
         }
         // If Mac
         else {
-            const middleOfScreen = (window.innerHeight / 2);
             const offset = getSelectionOffsetInGoogleDocs(selection);
 
             let normalRect = range.getBoundingClientRect();
