@@ -112,7 +112,7 @@ function showPopover(originalText, inputSelector, activeElement) {
 
     // Create the submit button inside the popover
     const submitButton = document.createElement('button');
-    submitButton.textContent = 'Submit';
+    submitButton.textContent = 'Generate ✦';
     submitButton.className = 'popover-submit-button';
 
     // SUBMIT ACTION!!!
@@ -367,16 +367,6 @@ document.addEventListener('mouseup', (event) => {
 });
 document.addEventListener('mousedown', handleDeselect);
 
-// Select by keyboard
-document.addEventListener('keyup', (event) => {
-    handleDeselect();
-});
-document.addEventListener('keydown', (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
-        setTimeout(handleSelectionComplete, 50);
-    }
-});
-
 // Deselect
 document.addEventListener('input', handleDeselect);
 
@@ -387,3 +377,19 @@ setTimeout(() => {
         element.addEventListener('input', handleDeselect);
     });
 }, 2500);
+
+
+// Key event
+let documentToAddListner = document;
+if (isGoogleDocs()) {
+    documentToAddListner = document.querySelector('.docs-texteventtarget-iframe').contentWindow.document;
+}
+// Select by keyboard
+documentToAddListner.addEventListener('keyup', (event) => {
+    handleDeselect();
+});
+documentToAddListner.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+        setTimeout(handleSelectionComplete, 50);
+    }
+});
