@@ -68,22 +68,37 @@ async function handClickToRewrite(originalText, selectedOption, enteredText, inp
             const inputElement = document.querySelector(inputSelector);
 
             if (inputElement) {
-                // Get the current value of the input
-                const currentValue = inputElement.value;
-
+                // Get the current HTML of the contenteditable element
+                const currentHTML = inputElement.innerHTML;
+            
                 // Replace the originalText with the suggestion
-                const newValue = currentValue.replace(originalText, suggestion);
-
-                // Set the new value to the input
-                inputElement.value = newValue;
-
-                // Optionally, set the cursor position or select the replaced text
-                const start = inputElement.value.indexOf(suggestion);
-                const end = start + suggestion.length;
-                inputElement.setSelectionRange(start, end);
-
-                // Focus back on the input element
+                const newHTML = currentHTML.replace(originalText, suggestion);
+            
+                // Set the new HTML to the contenteditable element
+                inputElement.innerHTML = newHTML;
+            
+                // Set the cursor position or select the replaced text
+                const range = document.createRange();
+                const selection = window.getSelection();
+            
+                // Find the start position of the suggestion
+                const start = newHTML.indexOf(suggestion);
+                if (start !== -1) {
+                    // Set the range to select the suggestion
+                    range.setStart(inputElement.firstChild, start);
+                    range.setEnd(inputElement.firstChild, start + suggestion.length);
+            
+                    // Clear any existing selection and add the new range
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+            
+                // Focus back on the contenteditable element
                 inputElement.focus();
+            
+                // Dispatch a change event if needed
+                const event = new Event('input', { bubbles: true });
+                inputElement.dispatchEvent(event);
             }
         }
     }
