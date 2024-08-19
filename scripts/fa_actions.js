@@ -295,7 +295,7 @@ function createButton(selection, inputSelector, frameElement) {
         // Not text area (maybe input?)
         else {
             // Fallback to the range if <textarea> is not found
-            let normalRect = range.getBoundingClientRect();
+            let normalRect = getSelectionTopLeft(selection);
             
             if (normalRect.bottom < middleOfScreen) {
                 // If above the middle of the screen, display below

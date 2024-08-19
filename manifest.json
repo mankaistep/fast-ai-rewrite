@@ -11,6 +11,7 @@
         {
           "js": [
             "scripts/fa_initiator.js",
+            "scripts/fa_utils.js",
             "scripts/fa_actions.js"
           ],
           "css": [
