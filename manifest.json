@@ -12,6 +12,9 @@
           "js": [
             "scripts/fa_initiator.js",
             "scripts/fa_utils.js",
+            "scripts/fa_listeners.js",
+            "scripts/fa_ai.js",
+            "scripts/fa_rewrite_handle.js",
             "scripts/fa_actions.js"
           ],
           "css": [

@@ -1,131 +1,4 @@
 /*
-    AI function
-*/
-async function aiRewrite(original, prompt) {
-    const request = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-            'OpenAI-Organization': `${OPENAI_ORGANIZATION_ID}`,
-            'OpenAI-Project': `${OPENAI_PROJECT_ID}`
-        },
-        body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
-                {
-                    role: "system", 
-                    content: `
-                        You are a support agent for an Shopify App platform.
-                        You are about to rewrite the chat I provide based on the content I give you
-                        Your job is to assist customers with any issues they encounter while using the platform, ensuring that responses are clear, empathetic, and solution-oriented
-                        Always maintain a friendly and professional tone, and provide concise and actionable guidance, sometime funny
-                        Don't make the message feel like bot, make it human
-                        The prompt will include message to rewrite and the note when rewrite
-                        If the note is empty, please ignore
-                        Provide rewritten text only, don't include anything else
-                    ` 
-                },
-                {
-                    role: "user",
-                    content: `
-                        message to rewrite: ${original}.
-                        note when rewrite: ${prompt}
-                    `
-                }
-            ],
-            temperature: 0.3
-        })
-    }
-
-    // Send
-    // Send the request and return the suggestion
-    try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', request);
-        const data = await response.json();
-
-        const suggestion = data.choices[0].message.content;
-        
-        return suggestion;
-    } catch (error) {
-        return null;
-    }
-}
-
-/*
-    Action rewrite
-*/
-async function handClickToRewrite(originalText, selectedOption, enteredText, inputSelector, activeElement) {
-    const suggestion = await aiRewrite(originalText, enteredText);
-
-    if (suggestion) {
-        // Check if GG Docs
-        if (isGoogleDocs()) {
-            pasteContent(suggestion, activeElement);
-        }
-        // If inputs
-        else {
-            const inputElement = document.querySelector(inputSelector);
-
-            if (!inputElement) {
-                console.error('Element not found');
-                return;
-            }
-        
-            if (inputElement.tagName === 'TEXTAREA') {
-                // For <textarea>
-                const currentValue = inputElement.value;
-                const newValue = currentValue.replace(originalText, suggestion);
-                inputElement.value = newValue;
-        
-                // Set the cursor position or selection range
-                const start = newValue.indexOf(suggestion);
-                if (start !== -1) {
-                    const end = start + suggestion.length;
-                    inputElement.setSelectionRange(start, end);
-                }
-        
-                inputElement.focus();
-                const event = new Event('input', { bubbles: true });
-                inputElement.dispatchEvent(event);
-            } else if (inputElement.isContentEditable) {
-                // For contenteditable element
-                const currentHTML = inputElement.innerHTML;
-                const newHTML = currentHTML.replace(originalText, suggestion);
-                inputElement.innerHTML = newHTML;
-        
-                // Set the cursor position or select the replaced text
-                const range = document.createRange();
-                const selection = window.getSelection();
-        
-                // Find the start position of the suggestion
-                const start = newHTML.indexOf(suggestion);
-                if (start !== -1) {
-                    const textNode = Array.from(inputElement.childNodes).find(node =>
-                        node.nodeType === Node.TEXT_NODE && node.textContent.includes(suggestion)
-                    );
-        
-                    if (textNode) {
-                        range.setStart(textNode, start);
-                        range.setEnd(textNode, start + suggestion.length);
-        
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
-                }
-        
-                inputElement.focus();
-                const event = new Event('input', { bubbles: true });
-                inputElement.dispatchEvent(event);
-            } else {
-                console.error('Unsupported element type');
-            }
-            
-        }
-    }
-}
-
-/*
     Create HTML elements
 */
 function showPopover(originalText, inputSelector, activeElement) {
@@ -204,13 +77,11 @@ function showPopover(originalText, inputSelector, activeElement) {
 
     // Revert button action
     revertButton.addEventListener('click', () => {
-        // Revert to the original text
-        const inputElement = document.querySelector(inputSelector);
-        if (inputElement) {
-            inputElement.innerHTML = originalText;
-        }
-        // Hide the revert button again
-        revertButton.style.display = 'none';
+        handleClickRevert();
+
+        // Remove popup
+        document.body.removeChild(popover);
+        document.removeEventListener('click', handleClickOutside);
     });
 
     // Append the content to the popover container
@@ -245,6 +116,9 @@ function showPopover(originalText, inputSelector, activeElement) {
         if (!popover.contains(event.target) && event.target !== button) {
             document.body.removeChild(popover);
             document.removeEventListener('click', handleClickOutside);
+
+            // Clear cache
+            removeLastText();
         }
     }
     document.addEventListener('click', handleClickOutside);
@@ -412,6 +286,9 @@ function showButton(selection, inputSelector, frameElement) {
     // Create button
     const button = createButton(selection, inputSelector, frameElement);
 
+    // Clear cache
+    removeLastText();
+
     // Append the button to the document body
     document.body.appendChild(button);
 }
@@ -422,73 +299,3 @@ function hideButton() {
         existingButton.remove();
     }
 }
-
-/*
-    Handle events
-*/
-function handleSelectionComplete() {
-    // Only show button if it's editable field or it's Google Docs
-    if (!isEditingGoogleDocs()) {
-        if (!isCursorInTypableField()) {
-            return;
-        }
-    }
-    
-    // Show button
-    const activeElement = document.activeElement;
-
-    const parentWindow = getContentWindowForActiveElement();
-    const selection = parentWindow.document.getSelection();
-    
-    if (selection.toString()) {
-        showButton(selection, getUniqueSelector(activeElement), parentWindow.frameElement);
-    }
-}
-
-function handleDeselect(event) {
-    try {
-        if (event.target.matches(BUTTON_SELECTOR)) {
-            return;
-        }
-        hideButton();
-    }
-    catch (error) {
-        return;
-    }
-}
-
-/*
-    Listen to events
-*/
-// Add event listeners for mouse
-document.addEventListener('mouseup', (event) => {
-    setTimeout(handleSelectionComplete, 50);
-});
-document.addEventListener('mousedown', handleDeselect);
-
-// Deselect
-document.addEventListener('input', handleDeselect);
-
-// Deselect with text area
-setTimeout(() => {
-    const inputElements = document.querySelectorAll('textarea, input[type="text"]');
-    inputElements.forEach(element => {
-        element.addEventListener('input', handleDeselect);
-    });
-}, 2500);
-
-
-// Key event
-let documentToAddListner = document;
-if (isGoogleDocs()) {
-    documentToAddListner = document.querySelector('.docs-texteventtarget-iframe').contentWindow.document;
-}
-// Select by keyboard
-documentToAddListner.addEventListener('keyup', (event) => {
-    handleDeselect();
-});
-documentToAddListner.addEventListener('keydown', (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
-        setTimeout(handleSelectionComplete, 50);
-    }
-});
