@@ -14,7 +14,7 @@ function isCursorInTypableField() {
     if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
         return true;
     }
-
+    console.log('active:', activeElement);
     if (activeElement.hasAttribute('contenteditable')) {
         return true;
     }
@@ -68,6 +68,10 @@ function isEditingGoogleDocs() {
     return false;
 }
 
+function isElementInIframe(element) {
+    return element.ownerDocument !== window.top.document;
+}
+
 /*
     Iframe position convert
 */
@@ -104,6 +108,15 @@ function convertIframePositionToMainWindow(iframe, rect) {
     };
 }
 
+function getIframeContainingElement(element) {
+    while (element) {
+        if (element.tagName === 'IFRAME') {
+            return element;
+        }
+        element = element.parentElement;
+    }
+    return null; // Return null if no iframe is found
+}
 
 /*
     Google Docs
