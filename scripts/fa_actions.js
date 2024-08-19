@@ -56,20 +56,35 @@ async function aiRewrite(original, prompt) {
     Action rewrite
 */
 async function handClickToRewrite(originalText, selectedOption, enteredText, inputSelector, activeElement) {
-    // console.log('Selected option:', selectedOption);
-    // console.log('Entered text:', enteredText);
-
     const suggestion = await aiRewrite(originalText, enteredText);
 
     if (suggestion) {
         // Check if GG Docs
-        if (isGoogleDocs()) { 
+        if (isGoogleDocs()) {
             pasteContent(suggestion, activeElement);
         }
         // If inputs
         else {
-            document.querySelector(inputSelector).innerText = suggestion;
-            document.querySelector(inputSelector).value = suggestion;
+            const inputElement = document.querySelector(inputSelector);
+
+            if (inputElement) {
+                // Get the current value of the input
+                const currentValue = inputElement.value;
+
+                // Replace the originalText with the suggestion
+                const newValue = currentValue.replace(originalText, suggestion);
+
+                // Set the new value to the input
+                inputElement.value = newValue;
+
+                // Optionally, set the cursor position or select the replaced text
+                const start = inputElement.value.indexOf(suggestion);
+                const end = start + suggestion.length;
+                inputElement.setSelectionRange(start, end);
+
+                // Focus back on the input element
+                inputElement.focus();
+            }
         }
     }
 }
