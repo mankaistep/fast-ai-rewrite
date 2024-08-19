@@ -67,39 +67,60 @@ async function handClickToRewrite(originalText, selectedOption, enteredText, inp
         else {
             const inputElement = document.querySelector(inputSelector);
 
-            if (inputElement) {
-                // Get the current HTML of the contenteditable element
+            if (!inputElement) {
+                console.error('Element not found');
+                return;
+            }
+        
+            if (inputElement.tagName === 'TEXTAREA') {
+                // For <textarea>
+                const currentValue = inputElement.value;
+                const newValue = currentValue.replace(originalText, suggestion);
+                inputElement.value = newValue;
+        
+                // Set the cursor position or selection range
+                const start = newValue.indexOf(suggestion);
+                if (start !== -1) {
+                    const end = start + suggestion.length;
+                    inputElement.setSelectionRange(start, end);
+                }
+        
+                inputElement.focus();
+                const event = new Event('input', { bubbles: true });
+                inputElement.dispatchEvent(event);
+            } else if (inputElement.isContentEditable) {
+                // For contenteditable element
                 const currentHTML = inputElement.innerHTML;
-            
-                // Replace the originalText with the suggestion
                 const newHTML = currentHTML.replace(originalText, suggestion);
-            
-                // Set the new HTML to the contenteditable element
                 inputElement.innerHTML = newHTML;
-            
+        
                 // Set the cursor position or select the replaced text
                 const range = document.createRange();
                 const selection = window.getSelection();
-            
+        
                 // Find the start position of the suggestion
                 const start = newHTML.indexOf(suggestion);
                 if (start !== -1) {
-                    // Set the range to select the suggestion
-                    range.setStart(inputElement.firstChild, start);
-                    range.setEnd(inputElement.firstChild, start + suggestion.length);
-            
-                    // Clear any existing selection and add the new range
-                    selection.removeAllRanges();
-                    selection.addRange(range);
+                    const textNode = Array.from(inputElement.childNodes).find(node =>
+                        node.nodeType === Node.TEXT_NODE && node.textContent.includes(suggestion)
+                    );
+        
+                    if (textNode) {
+                        range.setStart(textNode, start);
+                        range.setEnd(textNode, start + suggestion.length);
+        
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
                 }
-            
-                // Focus back on the contenteditable element
+        
                 inputElement.focus();
-            
-                // Dispatch a change event if needed
                 const event = new Event('input', { bubbles: true });
                 inputElement.dispatchEvent(event);
+            } else {
+                console.error('Unsupported element type');
             }
+            
         }
     }
 }
@@ -140,24 +161,57 @@ function showPopover(originalText, inputSelector, activeElement) {
     textField.className = 'popover-textfield';
     popoverContent.appendChild(textField);
 
+    // Create the button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'popover-button-container';
+
     // Create the submit button inside the popover
     const submitButton = document.createElement('button');
     submitButton.innerHTML = 'Generate ✦';
     submitButton.className = REWRITE_BUTTON_SELECTOR.replace(".", "");
+    buttonContainer.appendChild(submitButton);
+
+    // Create the revert button
+    const revertButton = document.createElement('button');
+    revertButton.innerHTML = `
+    <svg viewBox="0 0 20 20" class="Icon_Icon__uZZKy" style="width: 20px; height: 20px;"><path d="M7.47 3.72a.75.75 0 0 1 1.06 1.06l-1.72 1.72h3.94a5 5 0 0 1 0 10h-1.5a.75.75 0 0 1 0-1.5h1.5a3.5 3.5 0 1 0 0-7h-3.94l1.72 1.72a.75.75 0 1 1-1.06 1.06l-3-3a.75.75 0 0 1 0-1.06l3-3Z"></path></svg>
+    `;
+    revertButton.style.display = 'none'; // Initially hidden
+    revertButton.className = 'popover-revert-button';
+    buttonContainer.appendChild(revertButton);
+
+    // Button container
+    popoverContent.appendChild(buttonContainer);
 
     // SUBMIT ACTION!!!
     submitButton.addEventListener('click', async () => {
         const generateButton = document.querySelector(REWRITE_BUTTON_SELECTOR);
 
         generateButton.classList.add('loading');
-        generateButton.innerHTML = 'AI processing <div class="spinner"></div>'; 
+        generateButton.innerHTML = '<div class="spinner"></div>'; 
     
         await handClickToRewrite(originalText, select.value, textField.value, inputSelector, activeElement)
 
         generateButton.classList.remove('loading');
-        submitButton.innerHTML = 'Generate ✦';
+
+        submitButton.classList.remove(REWRITE_BUTTON_SELECTOR);
+        submitButton.classList.add('popover-resubmit-button');
+        submitButton.innerHTML = 'Again ✦';
+
+        // Show the revert button after the first click
+        revertButton.style.display = 'flex'; // Change display property;
     });
-    popoverContent.appendChild(submitButton);
+
+    // Revert button action
+    revertButton.addEventListener('click', () => {
+        // Revert to the original text
+        const inputElement = document.querySelector(inputSelector);
+        if (inputElement) {
+            inputElement.innerHTML = originalText;
+        }
+        // Hide the revert button again
+        revertButton.style.display = 'none';
+    });
 
     // Append the content to the popover container
     popover.appendChild(popoverContent);
@@ -173,12 +227,14 @@ function showPopover(originalText, inputSelector, activeElement) {
         topPosition = window.scrollY + buttonRect.top; // 10px below the button
     } else {
         // If below the middle of the screen, position the popover above the button
-        topPosition = window.scrollY + buttonRect.top - popover.offsetHeight - 170; // Adjusted to 170px above the button
+        topPosition = window.scrollY + buttonRect.top - popover.offsetHeight - 150; // Adjusted to 170px above the button
     }
+
+    const leftPosition = window.scrollX + buttonRect.left - (buttonRect.right - buttonRect.left) / 2;
     
     Object.assign(popover.style, {
         top: `${topPosition}px`,
-        left: `${window.scrollX + buttonRect.left}px`
+        left: `${leftPosition}px`
     });
     
     document.body.appendChild(popover);
@@ -227,7 +283,6 @@ function getSelectionRectRelativeToBody(selection) {
         height: rect.height
     };
 }
-
 
 function createButton(selection, inputSelector, frameElement) {
     // Create a button element
