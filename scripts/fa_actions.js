@@ -127,11 +127,21 @@ function showPopover(originalText, inputSelector, activeElement) {
 
     // Create the submit button inside the popover
     const submitButton = document.createElement('button');
-    submitButton.textContent = 'Generate ✦';
-    submitButton.className = 'popover-submit-button';
+    submitButton.innerHTML = 'Generate ✦';
+    submitButton.className = REWRITE_BUTTON_SELECTOR.replace(".", "");
 
     // SUBMIT ACTION!!!
-    submitButton.addEventListener('click', handClickToRewrite(originalText, select.value, textField.value, inputSelector, activeElement));
+    submitButton.addEventListener('click', async () => {
+        const generateButton = document.querySelector(REWRITE_BUTTON_SELECTOR);
+
+        generateButton.classList.add('loading');
+        generateButton.innerHTML = 'AI processing <div class="spinner"></div>'; 
+    
+        await handClickToRewrite(originalText, select.value, textField.value, inputSelector, activeElement)
+
+        generateButton.classList.remove('loading');
+        submitButton.innerHTML = 'Generate ✦';
+    });
     popoverContent.appendChild(submitButton);
 
     // Append the content to the popover container
@@ -216,7 +226,7 @@ function createButton(selection, inputSelector, frameElement) {
     const selectedNode = range.startContainer;
     const parentElement = selectedNode.nodeType === 3 ? selectedNode.parentElement : selectedNode;
 
-    let top, left, bottom;
+    let top, left;
 
     // Find the <textarea> element
     let textArea = null;
@@ -314,7 +324,11 @@ function createButton(selection, inputSelector, frameElement) {
 
     // Event
     button.addEventListener('click', () => {
+    
+        // Perform your action (e.g., show popover, etc.)
         showPopover(selection.toString(), inputSelector, parentElement);
+    
+        // Optionally, you can hide the button after the action is complete
         hideButton();
     });
 

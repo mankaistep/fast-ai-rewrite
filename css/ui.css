@@ -10,6 +10,52 @@
     cursor: pointer;
 }
 
+
+.popover-submit-button {
+    padding: 10px;
+    background: linear-gradient(45deg, #ff6ed3, #7873f5);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; /* Use Flexbox */
+    align-items: center; /* Center items vertically */
+    justify-content: center; /* Center items horizontally */
+    gap: 8px; /* Space between text and spinner */
+}
+
+
+.popover-submit-button.loading {
+    background: #CDC0D6; /* Lighter color for loading state */
+    color: #666; /* Optional: Change text color for readability */
+    cursor: not-allowed; /* Indicate that the button is not clickable */
+    pointer-events: none; /* Prevent further clicks */
+}
+
+.popover-submit-button .spinner {
+    border: 2px solid #f3f3f3; /* Light background */
+    border-radius: 50%;
+    border-top: 2px solid #B771E6; /* Blue color for the spinner */
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+}
+
+/* Spinner animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+
 .popover {
     position: absolute;
     background-color: white;

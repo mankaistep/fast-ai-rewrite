@@ -1,5 +1,7 @@
 const BUTTON_SELECTOR = '.selection-button';
 
+const REWRITE_BUTTON_SELECTOR = '.popover-submit-button';
+
 const OPENAI_API_KEY = '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';
 const OPENAI_ORGANIZATION_ID = 'org-G3tztz3w8bknXwb2FeSN8sa1';
 const OPENAI_PROJECT_ID = 'proj_I7L3HWWUVlrcgV6R0IUevhlI';
