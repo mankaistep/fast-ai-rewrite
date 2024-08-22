@@ -36,6 +36,16 @@ async function handClickToRewrite(originalText, selectedOption, enteredText, inp
         }
         // If inputs
         else {
+            let toBeReplaced;
+            const toReplace = suggestion;
+            // First time
+            if (!lastSuggestedText) {
+                toBeReplaced = originalText;
+            }
+            // Generate again
+            else {
+                toBeReplaced = lastSuggestedText;
+            }
             const inputElement = document.querySelector(inputSelector);
 
             if (!inputElement) {
@@ -46,7 +56,7 @@ async function handClickToRewrite(originalText, selectedOption, enteredText, inp
             if (inputElement.tagName === 'TEXTAREA') {
                 // For <textarea>
                 const currentValue = inputElement.value;
-                const newValue = currentValue.replace(originalText, suggestion);
+                const newValue = currentValue.replace(toBeReplaced, toReplace);
                 inputElement.value = newValue;
         
                 // Set the cursor position or selection range
@@ -66,7 +76,7 @@ async function handClickToRewrite(originalText, selectedOption, enteredText, inp
             } else if (inputElement.isContentEditable) {
                 // For contenteditable element
                 const currentHTML = inputElement.innerHTML;
-                const newHTML = currentHTML.replace(originalText, suggestion);
+                const newHTML = currentHTML.replace(toBeReplaced, toReplace);
                 inputElement.innerHTML = newHTML;
         
                 // Set the cursor position or select the replaced text
@@ -106,7 +116,14 @@ async function handClickToRewrite(originalText, selectedOption, enteredText, inp
 /*
     Action revert
 */
-async function handleClickRevert() {
+async function handleClickRevert(activeElement) {
+    // If GG Docs, force Ctrl Z
+    if (isGoogleDocs()) {
+        triggerUndo(activeElement);
+        return;
+    }
+    
+    // Else replace text
     const inputSelector = lastInputSelector;
     if (!inputSelector) {
         console.log('No input selector to revert');

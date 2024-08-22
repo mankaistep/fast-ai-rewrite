@@ -106,7 +106,6 @@ function getSelectionTopLeft(selection) {
     }
 }
 
-
 function dispatchChangeEvent(element) {
     const event = new Event('input', {
         bubbles: true,

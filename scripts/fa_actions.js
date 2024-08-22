@@ -65,23 +65,30 @@ function showPopover(originalText, inputSelector, activeElement) {
     
         await handClickToRewrite(originalText, select.value, textField.value, inputSelector, activeElement)
 
-        generateButton.classList.remove('loading');
+        if (!isGoogleDocs()) {
+            generateButton.classList.remove('loading');
 
-        submitButton.classList.remove(REWRITE_BUTTON_SELECTOR);
-        submitButton.classList.add('popover-resubmit-button');
-        submitButton.innerHTML = 'Again ✦';
-
-        // Show the revert button after the first click
-        revertButton.style.display = 'flex'; // Change display property;
+            submitButton.classList.remove(REWRITE_BUTTON_SELECTOR);
+            submitButton.classList.add('popover-resubmit-button');
+            submitButton.innerHTML = 'Again ✦';
+    
+            // Show the revert button after the first click
+            revertButton.style.display = 'flex'; // Change display property;
+        }
+        // If GGDocs, close popover
+        else {
+            document.body.removeChild(popover);
+            document.removeEventListener('click', handleClickOutside);
+        }
     });
 
     // Revert button action
     revertButton.addEventListener('click', () => {
-        handleClickRevert();
-
         // Remove popup
         document.body.removeChild(popover);
         document.removeEventListener('click', handleClickOutside);
+
+        handleClickRevert(activeElement);
     });
 
     // Append the content to the popover container
