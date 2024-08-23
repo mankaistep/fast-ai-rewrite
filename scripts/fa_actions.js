@@ -1,95 +1,4 @@
 /*
-    AI function
-*/
-async function aiRewrite(original, prompt) {
-    const request = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-            'OpenAI-Organization': `${OPENAI_ORGANIZATION_ID}`,
-            'OpenAI-Project': `${OPENAI_PROJECT_ID}`
-        },
-        body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
-                {
-                    role: "system", 
-                    content: `
-                        You are a support agent for an Shopify App platform.
-                        You are about to rewrite the chat I provide based on the content I give you
-                        Your job is to assist customers with any issues they encounter while using the platform, ensuring that responses are clear, empathetic, and solution-oriented
-                        Always maintain a friendly and professional tone, and provide concise and actionable guidance, sometime funny
-                        Don't make the message feel like bot, make it human
-                        The prompt will include message to rewrite and the note when rewrite
-                        If the note is empty, please ignore
-                        Provide rewritten text only, don't include anything else
-                    ` 
-                },
-                {
-                    role: "user",
-                    content: `
-                        message to rewrite: ${original}.
-                        note when rewrite: ${prompt}
-                    `
-                }
-            ],
-            temperature: 0.3
-        })
-    }
-
-    // Send
-    // Send the request and return the suggestion
-    try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', request);
-        const data = await response.json();
-
-        const suggestion = data.choices[0].message.content;
-        
-        return suggestion;
-    } catch (error) {
-        return null;
-    }
-}
-
-/*
-    Action rewrite
-*/
-async function handClickToRewrite(originalText, selectedOption, enteredText, inputSelector, activeElement) {
-    const suggestion = await aiRewrite(originalText, enteredText);
-
-    if (suggestion) {
-        // Check if GG Docs
-        if (isGoogleDocs()) {
-            pasteContent(suggestion, activeElement);
-        }
-        // If inputs
-        else {
-            const inputElement = document.querySelector(inputSelector);
-
-            if (inputElement) {
-                // Get the current value of the input
-                const currentValue = inputElement.value;
-
-                // Replace the originalText with the suggestion
-                const newValue = currentValue.replace(originalText, suggestion);
-
-                // Set the new value to the input
-                inputElement.value = newValue;
-
-                // Optionally, set the cursor position or select the replaced text
-                const start = inputElement.value.indexOf(suggestion);
-                const end = start + suggestion.length;
-                inputElement.setSelectionRange(start, end);
-
-                // Focus back on the input element
-                inputElement.focus();
-            }
-        }
-    }
-}
-
-/*
     Create HTML elements
 */
 function showPopover(originalText, inputSelector, activeElement) {
@@ -125,14 +34,62 @@ function showPopover(originalText, inputSelector, activeElement) {
     textField.className = 'popover-textfield';
     popoverContent.appendChild(textField);
 
+    // Create the button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'popover-button-container';
+
     // Create the submit button inside the popover
     const submitButton = document.createElement('button');
-    submitButton.textContent = 'Generate ✦';
-    submitButton.className = 'popover-submit-button';
+    submitButton.innerHTML = 'Generate ✦';
+    submitButton.className = REWRITE_BUTTON_SELECTOR.replace(".", "");
+    buttonContainer.appendChild(submitButton);
+
+    // Create the revert button
+    const revertButton = document.createElement('button');
+    revertButton.innerHTML = `
+    <svg viewBox="0 0 20 20" class="Icon_Icon__uZZKy" style="width: 20px; height: 20px;"><path d="M7.47 3.72a.75.75 0 0 1 1.06 1.06l-1.72 1.72h3.94a5 5 0 0 1 0 10h-1.5a.75.75 0 0 1 0-1.5h1.5a3.5 3.5 0 1 0 0-7h-3.94l1.72 1.72a.75.75 0 1 1-1.06 1.06l-3-3a.75.75 0 0 1 0-1.06l3-3Z"></path></svg>
+    `;
+    revertButton.style.display = 'none'; // Initially hidden
+    revertButton.className = 'popover-revert-button';
+    buttonContainer.appendChild(revertButton);
+
+    // Button container
+    popoverContent.appendChild(buttonContainer);
 
     // SUBMIT ACTION!!!
-    submitButton.addEventListener('click', handClickToRewrite(originalText, select.value, textField.value, inputSelector, activeElement));
-    popoverContent.appendChild(submitButton);
+    submitButton.addEventListener('click', async () => {
+        const generateButton = document.querySelector(REWRITE_BUTTON_SELECTOR);
+
+        generateButton.classList.add('loading');
+        generateButton.innerHTML = '<div class="spinner"></div>'; 
+    
+        await handClickToRewrite(originalText, select.value, textField.value, inputSelector, activeElement)
+
+        if (!isGoogleDocs()) {
+            generateButton.classList.remove('loading');
+
+            submitButton.classList.remove(REWRITE_BUTTON_SELECTOR);
+            submitButton.classList.add('popover-resubmit-button');
+            submitButton.innerHTML = 'Again ✦';
+    
+            // Show the revert button after the first click
+            revertButton.style.display = 'flex'; // Change display property;
+        }
+        // If GGDocs, close popover
+        else {
+            document.body.removeChild(popover);
+            document.removeEventListener('click', handleClickOutside);
+        }
+    });
+
+    // Revert button action
+    revertButton.addEventListener('click', () => {
+        // Remove popup
+        document.body.removeChild(popover);
+        document.removeEventListener('click', handleClickOutside);
+
+        handleClickRevert(activeElement);
+    });
 
     // Append the content to the popover container
     popover.appendChild(popoverContent);
@@ -148,12 +105,14 @@ function showPopover(originalText, inputSelector, activeElement) {
         topPosition = window.scrollY + buttonRect.top; // 10px below the button
     } else {
         // If below the middle of the screen, position the popover above the button
-        topPosition = window.scrollY + buttonRect.top - popover.offsetHeight - 170; // Adjusted to 170px above the button
+        topPosition = window.scrollY + buttonRect.top - popover.offsetHeight - 150; // Adjusted to 170px above the button
     }
+
+    const leftPosition = window.scrollX + buttonRect.left - (buttonRect.right - buttonRect.left) / 2;
     
     Object.assign(popover.style, {
         top: `${topPosition}px`,
-        left: `${window.scrollX + buttonRect.left}px`
+        left: `${leftPosition}px`
     });
     
     document.body.appendChild(popover);
@@ -164,6 +123,9 @@ function showPopover(originalText, inputSelector, activeElement) {
         if (!popover.contains(event.target) && event.target !== button) {
             document.body.removeChild(popover);
             document.removeEventListener('click', handleClickOutside);
+
+            // Clear cache
+            removeLastText();
         }
     }
     document.addEventListener('click', handleClickOutside);
@@ -203,7 +165,6 @@ function getSelectionRectRelativeToBody(selection) {
     };
 }
 
-
 function createButton(selection, inputSelector, frameElement) {
     // Create a button element
     const button = document.createElement('button');
@@ -216,7 +177,7 @@ function createButton(selection, inputSelector, frameElement) {
     const selectedNode = range.startContainer;
     const parentElement = selectedNode.nodeType === 3 ? selectedNode.parentElement : selectedNode;
 
-    let top, left, bottom;
+    let top, left;
 
     // Find the <textarea> element
     let textArea = null;
@@ -314,7 +275,11 @@ function createButton(selection, inputSelector, frameElement) {
 
     // Event
     button.addEventListener('click', () => {
+    
+        // Perform your action (e.g., show popover, etc.)
         showPopover(selection.toString(), inputSelector, parentElement);
+    
+        // Optionally, you can hide the button after the action is complete
         hideButton();
     });
 
@@ -328,6 +293,9 @@ function showButton(selection, inputSelector, frameElement) {
     // Create button
     const button = createButton(selection, inputSelector, frameElement);
 
+    // Clear cache
+    removeLastText();
+
     // Append the button to the document body
     document.body.appendChild(button);
 }
@@ -338,73 +306,3 @@ function hideButton() {
         existingButton.remove();
     }
 }
-
-/*
-    Handle events
-*/
-function handleSelectionComplete() {
-    // Only show button if it's editable field or it's Google Docs
-    if (!isEditingGoogleDocs()) {
-        if (!isCursorInTypableField()) {
-            return;
-        }
-    }
-    
-    // Show button
-    const activeElement = document.activeElement;
-
-    const parentWindow = getContentWindowForActiveElement();
-    const selection = parentWindow.document.getSelection();
-    
-    if (selection.toString()) {
-        showButton(selection, getUniqueSelector(activeElement), parentWindow.frameElement);
-    }
-}
-
-function handleDeselect(event) {
-    try {
-        if (event.target.matches(BUTTON_SELECTOR)) {
-            return;
-        }
-        hideButton();
-    }
-    catch (error) {
-        return;
-    }
-}
-
-/*
-    Listen to events
-*/
-// Add event listeners for mouse
-document.addEventListener('mouseup', (event) => {
-    setTimeout(handleSelectionComplete, 50);
-});
-document.addEventListener('mousedown', handleDeselect);
-
-// Deselect
-document.addEventListener('input', handleDeselect);
-
-// Deselect with text area
-setTimeout(() => {
-    const inputElements = document.querySelectorAll('textarea, input[type="text"]');
-    inputElements.forEach(element => {
-        element.addEventListener('input', handleDeselect);
-    });
-}, 2500);
-
-
-// Key event
-let documentToAddListner = document;
-if (isGoogleDocs()) {
-    documentToAddListner = document.querySelector('.docs-texteventtarget-iframe').contentWindow.document;
-}
-// Select by keyboard
-documentToAddListner.addEventListener('keyup', (event) => {
-    handleDeselect();
-});
-documentToAddListner.addEventListener('keydown', (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
-        setTimeout(handleSelectionComplete, 50);
-    }
-});

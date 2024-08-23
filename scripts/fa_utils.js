@@ -66,44 +66,50 @@ function isElementInIframe(element) {
     return element.ownerDocument !== window.top.document;
 }
 
-function getSelectionTopLeft(selection) { 
-    if (selection.isCollapsed) {
-        if (selection.rangeCount > 0) {
-            // Get the collapsed range
-            const range = selection.getRangeAt(0);
-            
+function getSelectionTopLeft(selection) {
+    if (selection.rangeCount > 0) {
+        // Get the range (collapsed or not)
+        const range = selection.getRangeAt(0);
+        let rect;
+
+        if (selection.isCollapsed) {
             // Create a temporary range with a small expansion to get bounding rect
             const tempRange = document.createRange();
             tempRange.setStart(range.startContainer, range.startOffset);
-            // Expand by 1 character or 1 unit if possible
+
             if (range.startOffset < range.startContainer.textContent.length) {
                 tempRange.setEnd(range.startContainer, range.startOffset + 1);
             } else {
-                // If can't expand, expand to the start of the container
                 tempRange.setEnd(range.startContainer, range.startOffset);
             }
 
-            const rects = tempRange.getClientRects();
-            if (rects.length > 0) {
-                // Use the top-left of the first rect
-                const rect = rects[0];
-                return {
-                    top: rect.top,
-                    left: rect.left,
-                    bottom: rect.bottom,
-                    right: rect.right
-                };
-            } else {
-                console.log('No bounding rectangle found.');
-                return null;
-            }
+            rect = tempRange.getClientRects()[0];
         } else {
-            console.log('No selection range available.');
+            // For non-collapsed selection, use the first bounding rect directly
+            rect = range.getClientRects()[0];
+        }
+
+        if (rect) {
+            return {
+                top: rect.top,
+                left: rect.left,
+                bottom: rect.bottom,
+                right: rect.right
+            };
+        } else {
+            console.log('No bounding rectangle found.');
             return null;
         }
     } else {
-        // Handle non-collapsed selection if needed
-        console.log('Selection is not collapsed.');
+        console.log('No selection range available.');
         return null;
     }
+}
+
+function dispatchChangeEvent(element) {
+    const event = new Event('input', {
+        bubbles: true,
+        cancelable: true,
+    });
+    element.dispatchEvent(event);
 }

@@ -10,10 +10,102 @@
     cursor: pointer;
 }
 
+
+.popover-submit-button {
+    height: 40px;
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(45deg, #ff6ed3, #7873f5);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; /* Use Flexbox */
+    align-items: center; /* Center items vertically */
+    justify-content: center; /* Center items horizontally */
+    gap: 8px; /* Space between text and spinner */
+}
+
+.popover-button-container {
+    display: flex; /* Align buttons in a row */
+    gap: 8px; /* Space between buttons */
+    align-items: center; /* Center buttons vertically */
+}
+
+.popover-resubmit-button {
+    height: 40px;
+    width: 80%; /* Fixed width for Re-generate button */
+    padding: 10px;
+    background: linear-gradient(45deg, #ff6ed3, #7873f5);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; /* Use Flexbox */
+    align-items: center; /* Center items vertically */
+    justify-content: center; /* Center items horizontally */
+    gap: 8px; /* Space between text and spinner */
+}
+
+.popover-revert-button {
+    height: 40px;
+    flex: 1; /* Take the remaining space */
+    padding: 10px;
+    background: #fefefe; /* Light background for secondary button */
+    color: #333; /* Darker text color for better readability */
+    border: 1px solid #ccc; /* Light border for definition */
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; /* Use Flexbox */
+    align-items: center; /* Center items vertically */
+    justify-content: center; /* Center items horizontally */
+    gap: 8px; /* Space between text and icons */
+    transition: background 0.3s ease, color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+.popover-revert-button svg {
+    fill: #333; /* Color of the icon */
+}
+
+
+
+.popover-submit-button.loading {
+    background: #CDC0D6; /* Lighter color for loading state */
+    color: #666; /* Optional: Change text color for readability */
+    cursor: not-allowed; /* Indicate that the button is not clickable */
+    pointer-events: none; /* Prevent further clicks */
+}
+
+.popover-submit-button .spinner {
+    border: 2px solid #f3f3f3; /* Light background */
+    border-radius: 50%;
+    border-top: 2px solid #B771E6; /* Blue color for the spinner */
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+}
+
+/* Spinner animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+
 .popover {
     position: absolute;
     background-color: white;
-    padding: 20px;
+    padding: 16px;
     border-radius: 5px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     z-index: 1000;
@@ -21,16 +113,21 @@
 
 .popover-content {
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Align items vertically */
+    gap: 10px; /* Add some space between items */
 }
 
 .popover-select,
 .popover-textfield {
     display: block;
+    height: 40px;
     width: 100%;
-    margin: 10px 0;
     box-sizing: border-box;
-    font-size: 14px;
+    font-size: 14px !important;
+    color: #1c1c1c;
+    border-radius: 4px !important;
+    border: 1px solid #ddd !important;
+    padding: 5px !important;
 }
 
 .popover-textfield {
@@ -38,11 +135,6 @@
     overflow: auto;
     max-height: calc(2 * 1.5em + 20px);
     line-height: 1.5em;
-    padding: 5px;
-}
-
-.popover-select {
-    padding: 5px;
 }
 
 .popover-submit-button {
