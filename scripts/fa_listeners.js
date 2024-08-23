@@ -48,7 +48,18 @@ document.addEventListener('mouseup', (event) => {
 document.addEventListener('mousedown', handleDeselect);
 
 // Deselect
-document.addEventListener('input', handleDeselect);
+document.addEventListener('input', () => {
+    handleDeselect();
+    if (!isForcedInput) {
+        if (lastInputSelector) {
+            const inputElement = document.querySelector(lastInputSelector);
+            if (event.target == inputElement) {
+                hidePopover();
+            }
+        }
+    }
+    isForcedInput = false;
+});
 
 // Deselect with text area
 setTimeout(() => {

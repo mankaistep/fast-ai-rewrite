@@ -2,6 +2,8 @@ let lastOriginalText;
 let lastSuggestedText;
 let lastInputSelector;
 
+let isForcedInput = false;
+
 /*
     Set last
 */
@@ -68,6 +70,7 @@ async function handClickToRewrite(originalText, selectedOption, enteredText, inp
         
                 inputElement.focus();
                 const event = new Event('input', { bubbles: true, cancelable: true });
+                isForcedInput = true;
                 inputElement.dispatchEvent(event);
 
                 // Set last
@@ -101,6 +104,7 @@ async function handClickToRewrite(originalText, selectedOption, enteredText, inp
         
                 inputElement.focus();
                 const event = new Event('input', { bubbles: true, cancelable: true });
+                isForcedInput = true;
                 inputElement.dispatchEvent(event);
 
                 // Set last
