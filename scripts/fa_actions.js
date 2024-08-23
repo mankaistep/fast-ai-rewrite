@@ -133,6 +133,17 @@ function showPopover(originalText, inputSelector, activeElement) {
     });
     
     document.body.appendChild(popover);
+
+    // Handle click outside when first edit
+    function handleClickOutside(event) {
+        if (!popover.contains(event.target) && event.target !== button) {
+            if (isFirstRewrite()) { 
+                hidePopover();
+                document.removeEventListener('click', handleClickOutside);
+            }
+        }
+    }
+    document.addEventListener('click', handleClickOutside);
 }
 
 function hidePopover() {

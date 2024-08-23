@@ -120,3 +120,7 @@ function isPopoverLive() {
         return true;
     } else return false;
 }
+
+function isFirstRewrite() {
+    return lastSuggestedText == null;
+}
