@@ -103,6 +103,7 @@
 
 
 .popover {
+    width: 250px;
     position: absolute;
     background-color: white;
     padding: 16px;

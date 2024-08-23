@@ -24,7 +24,7 @@ async function handClickToRewrite(originalText, selectedOption, enteredText, inp
         prompt = originalText;
     }
 
-    const suggestion = await aiRewrite(prompt, enteredText);
+    const suggestion = await aiRewrite(prompt, enteredText, selectedOption);
 
     if (suggestion) {
         // Check if GG Docs

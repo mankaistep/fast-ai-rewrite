@@ -20,17 +20,13 @@ function showPopover(originalText, inputSelector, activeElement) {
     // Create the select field
     const select = document.createElement('select');
     select.className = 'popover-select';
-    select.innerHTML = `
-        <option value="option1">Option 1</option>
-        <option value="option2">Option 2</option>
-        <option value="option3">Option 3</option>
-    `;
+    select.innerHTML = AGENTS.map(agent => `<option value="${agent.id}">${agent.name}</option>`).join('');
     popoverContent.appendChild(select);
 
     // Create the text field
     const textField = document.createElement('input');
     textField.type = 'text';
-    textField.placeholder = 'Enter text here';
+    textField.placeholder = 'Note';
     textField.className = 'popover-textfield';
     popoverContent.appendChild(textField);
 
