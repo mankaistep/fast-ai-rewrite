@@ -113,3 +113,10 @@ function dispatchChangeEvent(element) {
     });
     element.dispatchEvent(event);
 }
+
+function isPopoverLive() {
+    const popover = document.querySelector('.popover');
+    if (popover) {
+        return true;
+    } else return false;
+}

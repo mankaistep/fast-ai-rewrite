@@ -2,6 +2,9 @@
     Handle events
 */
 function handleSelectionComplete() {
+    if (isPopoverLive()) {
+        return;
+    }
     // Only show button if it's editable field or it's Google Docs
     if (!isEditingGoogleDocs()) {
         if (!isCursorInTypableField()) {
@@ -21,6 +24,9 @@ function handleSelectionComplete() {
 }
 
 function handleDeselect(event) {
+    if (isPopoverLive()) {
+        return;
+    }
     try {
         if (event.target.matches(BUTTON_SELECTOR)) {
             return;
