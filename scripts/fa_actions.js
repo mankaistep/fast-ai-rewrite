@@ -40,6 +40,23 @@ function showPopover(originalText, inputSelector, activeElement) {
     submitButton.className = REWRITE_BUTTON_SELECTOR.replace(".", "");
     buttonContainer.appendChild(submitButton);
 
+    // Create the ok button
+    const okButton = document.createElement('button');
+    okButton.innerHTML = `
+        <svg viewBox="0 0 24 24" class="Icon_Icon__uZZKy" style="width: 25px; height: 25px;">
+        <defs>
+            <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#ff6ed3;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#7873f5;stop-opacity:1" />
+            </linearGradient>
+        </defs>
+        <path d="M9 16.2l-4.2-4.2 1.4-1.4 2.8 2.8 6.6-6.6 1.4 1.4L9 16.2z" fill="url(#iconGradient)" stroke="none"></path>
+        </svg>
+    `;
+    okButton.style.display = 'none'; // Initially hidden
+    okButton.className = 'popover-ok-button';
+    buttonContainer.appendChild(okButton);
+
     // Create the revert button
     const revertButton = document.createElement('button');
     revertButton.innerHTML = `
@@ -69,12 +86,12 @@ function showPopover(originalText, inputSelector, activeElement) {
             submitButton.innerHTML = 'Again ✦';
     
             // Show the revert button after the first click
+            okButton.style.display = 'flex'; // Change display property;
             revertButton.style.display = 'flex'; // Change display property;
         }
         // If GGDocs, close popover
         else {
-            document.body.removeChild(popover);
-            document.removeEventListener('click', handleClickOutside);
+            hidePopover();
         }
     });
 
@@ -82,9 +99,13 @@ function showPopover(originalText, inputSelector, activeElement) {
     revertButton.addEventListener('click', () => {
         // Remove popup
         document.body.removeChild(popover);
-        document.removeEventListener('click', handleClickOutside);
 
         handleClickRevert(activeElement);
+    });
+
+    // Ok button
+    okButton.addEventListener('click', () => {
+        hidePopover();
     });
 
     // Append the content to the popover container
@@ -112,19 +133,16 @@ function showPopover(originalText, inputSelector, activeElement) {
     });
     
     document.body.appendChild(popover);
-    
+}
 
-    // Add an event listener to close the popover when clicking outside of it
-    function handleClickOutside(event) {
-        if (!popover.contains(event.target) && event.target !== button) {
-            document.body.removeChild(popover);
-            document.removeEventListener('click', handleClickOutside);
+function hidePopover() {
+    const popover = document.querySelector('.popover');
+    if (popover) {
+        document.body.removeChild(popover);
 
-            // Clear cache
-            removeLastText();
-        }
+        // Clear cache
+        removeLastText();
     }
-    document.addEventListener('click', handleClickOutside);
 }
 
 function getSelectionRectRelativeToBody(selection) {

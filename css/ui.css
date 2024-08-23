@@ -67,10 +67,30 @@
     transition: background 0.3s ease, color 0.3s ease; /* Smooth transition for hover effect */
 }
 
+.popover-ok-button {
+    height: 40px;
+    flex: 1; /* Take the remaining space */
+    padding: 10px;
+    background: #fefefe; /* Light background for secondary button */
+    color: #333; /* Darker text color for better readability */
+    border: 1px solid #ccc; /* Light border for definition */
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; /* Use Flexbox */
+    align-items: center; /* Center items vertically */
+    justify-content: center; /* Center items horizontally */
+    gap: 8px; /* Space between text and icons */
+    transition: background 0.3s ease, color 0.3s ease; /* Smooth transition for hover effect */
+}
+
 .popover-revert-button svg {
     fill: #333; /* Color of the icon */
 }
 
+.popover-ok-button svg {
+    fill: linear-gradient(45deg, #ff6ed3, #7873f5); /* Color of the icon */
+}
 
 
 .popover-submit-button.loading {

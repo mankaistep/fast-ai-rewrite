@@ -5,6 +5,7 @@ async function aiRewrite(original, prompt, agentId) {
     let agent = AGENTS.find(a => a.id == agentId);
 
     const content = agent.content;
+    const previousResponse = lastSuggestedText;
 
     const request = {
         method: 'POST',
@@ -19,13 +20,18 @@ async function aiRewrite(original, prompt, agentId) {
             messages: [
                 {
                     role: "system", 
-                    content: `${content}` 
+                    content: `
+                        ${content}
+                        if note when rewrite empty, please ignore
+                        if previous generated response is empty, please ignore
+                    ` 
                 },
                 {
                     role: "user",
                     content: `
                         message to rewrite: ${original}.
-                        note when rewrite: ${prompt}
+                        previous generated response and I didn't satisfy with it ${previousResponse}
+                        note when rewrite: ${prompt}.
                     `
                 }
             ],
