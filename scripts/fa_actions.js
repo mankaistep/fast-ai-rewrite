@@ -132,6 +132,7 @@ function showPopover(originalText, inputSelector, activeElement) {
         left: `${leftPosition}px`
     });
     
+    makePopoverDraggable(popover);
     document.body.appendChild(popover);
 
     // Handle click outside when first edit
@@ -298,11 +299,13 @@ function createButton(selection, inputSelector, frameElement) {
         button.style.left = `${left}px`;
     }
 
+    const selectionText = selection.toString();
+
     // Event
     button.addEventListener('click', () => {
     
         // Perform your action (e.g., show popover, etc.)
-        showPopover(selection.toString(), inputSelector, parentElement);
+        showPopover(selectionText, inputSelector, parentElement);
     
         // Optionally, you can hide the button after the action is complete
         hideButton();

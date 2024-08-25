@@ -18,7 +18,8 @@ function isCursorInTypableField() {
 
 function getUniqueSelector(element) {
     if (element.id) {
-        return `#${element.id}`;
+        // Escape special characters in the ID
+        return `#${CSS.escape(element.id)}`;
     }
 
     let path = [];
@@ -119,6 +120,35 @@ function isPopoverLive() {
     if (popover) {
         return true;
     } else return false;
+}
+
+function makePopoverDraggable(popover) {
+    let isDragging = false;
+    let startX, startY, initialX, initialY;
+
+    popover.addEventListener('mousedown', function(event) {
+        isDragging = true;
+        startX = event.clientX;
+        startY = event.clientY;
+        initialX = popover.offsetLeft;
+        initialY = popover.offsetTop;
+        popover.style.userSelect = 'none'; // Prevent text selection while dragging
+    });
+
+    document.addEventListener('mousemove', function(event) {
+        if (isDragging) {
+            const dx = event.clientX - startX;
+            const dy = event.clientY - startY;
+
+            popover.style.left = `${initialX + dx}px`;
+            popover.style.top = `${initialY + dy}px`;
+        }
+    });
+
+    document.addEventListener('mouseup', function() {
+        isDragging = false;
+        popover.style.userSelect = ''; // Re-enable text selection after dragging
+    });
 }
 
 function isFirstRewrite() {
