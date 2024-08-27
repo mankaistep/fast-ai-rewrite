@@ -17,31 +17,73 @@ function isCursorInTypableField() {
 }
 
 function getUniqueSelector(element) {
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) {
+        return null;
+    }
+
+    // Check for id
     if (element.id) {
         return `#${element.id}`;
     }
 
+    // Function to create attribute selector
+    const attrSelector = (attr) => `[${attr.name}="${attr.value.replace(/"/g, '\\"')}"]`;
+
+    // Check for unique attribute
+    for (let attr of element.attributes) {
+        if (attr.name !== 'class') {
+            const selector = element.tagName.toLowerCase() + attrSelector(attr);
+            if (document.querySelectorAll(selector).length === 1) {
+                return selector;
+            }
+        }
+    }
+
+    // Generate a path
     let path = [];
-    while (element && element.nodeType === Node.ELEMENT_NODE) {
-        let selector = element.nodeName.toLowerCase();
-        
-        // Add classes if they exist
-        if (element.className) {
-            selector += '.' + element.className.trim().replace(/\s+/g, '.');
+    let currentElement = element;
+    while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
+        let selector = currentElement.tagName.toLowerCase();
+
+        // Add classes (limit to 2)
+        if (currentElement.className) {
+            const classes = currentElement.className.trim().split(/\s+/).slice(0, 2);
+            if (classes.length > 0) {
+                selector += '.' + classes.join('.');
+            }
         }
 
-        // Add nth-child if necessary to distinguish similar siblings
-        if (element.parentElement) {
-            const siblings = Array.from(element.parentElement.children);
-            const sameTagSiblings = siblings.filter(sibling => sibling.nodeName === element.nodeName);
-            if (sameTagSiblings.length > 1) {
-                const index = siblings.indexOf(element) + 1;
+        // Add attribute selectors (limit to 2, exclude class)
+        let attrSelectors = Array.from(currentElement.attributes)
+            .filter(attr => attr.name !== 'class')
+            .map(attrSelector)
+            .slice(0, 2);
+        selector += attrSelectors.join('');
+
+        // Add nth-child only if necessary
+        let parent = currentElement.parentNode;
+        if (parent) {
+            let siblings = Array.from(parent.children);
+            let similars = siblings.filter(sibling => 
+                sibling.tagName === currentElement.tagName && 
+                sibling.className === currentElement.className
+            );
+            if (similars.length > 1) {
+                let index = siblings.indexOf(currentElement) + 1;
                 selector += `:nth-child(${index})`;
             }
         }
 
         path.unshift(selector);
-        element = element.parentElement;
+        currentElement = parent;
+
+        // Check if the current path is unique
+        if (document.querySelectorAll(path.join(' > ')).length === 1) {
+            break;
+        }
+
+        // Limit path length to prevent overly long selectors
+        if (path.length >= 4) break;
     }
 
     return path.join(' > ');

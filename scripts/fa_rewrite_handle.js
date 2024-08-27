@@ -57,8 +57,11 @@ async function handClickToRewrite(originalText, selectedOption, enteredText, inp
         
             if (inputElement.tagName === 'TEXTAREA') {
                 // For <textarea>
+                console.log('inputElement', inputElement);
                 const currentValue = inputElement.value;
+                console.log('currentValue', currentValue);
                 const newValue = currentValue.replace(toBeReplaced, toReplace);
+                console.log('newValue', newValue);
                 inputElement.value = newValue;
         
                 // Set the cursor position or selection range
